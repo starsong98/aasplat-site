@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AA-Splat: Anti-Aliased Feed-Forward 3D Gaussian Splatting</title>
+
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <!-- <link rel="icon" type="image/png" href="static\image\icon.png"/> -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <script src="./static/js/video_comparison.js"></script>
+
+  <style>
+    .comparison-container {
+        position: relative;
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        aspect-ratio: 16 / 9;
+        background: #000;
+        cursor: ew-resize;
+    }
+    .comparison-slider { position: relative; width: 100%; height: 100%; pointer-events: none; }
+    .comparison-item { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    /*.comparison-before { z-index: 2; width: 50%; overflow: hidden; border-right: 2px solid white; }*/
+    .comparison-before {
+        z-index: 2;
+        width: 50%;
+        overflow: hidden;
+        border-right: 2px solid white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+    }
+    .comparison-after { z-index: 1; }
+    /*.comparison-before img,*/
+    .comparison-before img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        /*width: 800px;*/ /* match container max-width */
+        width: 100%;
+        max-width: none;
+        object-fit: cover;
+    }
+    /*
+    .comparison-after img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    */
+    .comparison-after img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    #img-before {
+        width: 800px;
+        max-width: none;
+    }
+    .slider-handle {
+        position: absolute; z-index: 3; top: 0; bottom: 0; left: 50%;
+        width: 4px; background: white; transform: translateX(-50%);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .slider-handle-circle {
+        width: 40px; height: 40px; background: white; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    .comparison-label {
+        position: absolute; bottom: 15px; padding: 6px 15px;
+        background: rgba(15, 23, 42, 0.7); color: white;
+        font-size: 0.85rem; font-weight: 600; border-radius: 6px; z-index: 4;
+    }
+    .label-before { left: 15px; }
+    .label-after { right: 15px; }
+    .carousel-controls {
+        display: flex; align-items: center; justify-content: center;
+        gap: 20px; margin-top: 15px;
+    }
+    .nav-btn {
+        background: #0f172a; color: white; border: none; border-radius: 50%;
+        width: 40px; height: 40px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; transition: 0.3s;
+    }
+    .nav-btn:hover { background: #38bdf8; transform: scale(1.1); }
+    .sample-dots { display: flex; gap: 8px; }
+    .dot { width: 8px; height: 8px; background: #cbd5e1; border-radius: 50%; transition: 0.3s; cursor: pointer; }
+    .dot.active { background: #38bdf8; width: 20px; border-radius: 4px; }
+    .highlight-red {
+        color: #E63946;
+    }
+</style>
+</head>
+<body>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+           <div class="title is-1 publication-title"><h1 style="display: inline; clear:none;">AA-Splat:</h1> <h1 style="display: inline; clear:none;">Anti-Aliased Feed-Forward 3D Gaussian Splatting</h1></div>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a target="_blank" rel="noopener noreferrer" href="https://www.viclab.kaist.ac.kr/">Taewoo Suh</a> &nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span class="author-block">
+              <a target="_blank" rel="noopener noreferrer" href="https://www.viclab.kaist.ac.kr/">Sungpyo Kim</a> &nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span class="author-block">
+              <a target="_blank" rel="noopener noreferrer" href="https://sites.google.com/view/jongmin-park">Jongmin Park</a> &nbsp;&nbsp;&nbsp;&nbsp;</span>
+
+            <span class="author-block">
+              <a target="_blank" rel="noopener noreferrer" href="https://www.viclab.kaist.ac.kr/">Munchurl Kim</a><sup>† </sup>
+            </span>
+          </div>
+
+          <!--
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>*</sup>Co-first authors (equal contribution)</span>
+            <span class="author-block"><sup>†</sup>Corresponding author</span>
+          </div>
+          -->
+          <div class="is-size-5 publication-authors">
+            <!-- <span class="author-block"> <sup>†</sup>Co-corresponding authors</span> -->
+            <span class="author-block"><sup>†</sup>Corresponding author</span>
+          </div>
+          <div class="is-size-5 publication-authors">
+              <span class="author-block">Korea Advanced Institute of Science and Technology (KAIST)</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <!-- <span class="link-block">
+                <a target="_blank" rel="noopener noreferrer" href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span> -->
+              <span class="link-block">
+                <a target="_blank" rel="noopener noreferrer" href="https://kaist-viclab.github.io/aasplat-site"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv (Coming Soon)</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <!--
+              <span class="link-block">
+                <a target="_blank" rel="noopener noreferrer" href="https://github.com/KAIST-VICLab/AA-Splat"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              -->
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-widescreen">
+    <h2 class="title is-3 no-bottom">NVS under Varying Sampling Rates</h2>
+    <div class="content has-text-justified">
+      <p>
+        We compare our AA-Splat with other representative feed-forward 3DGS methods under varying zoom in/out factors, from 4&times; to 1/4&times.
+      </p>
+    </div>
+    <h2 class="title is-3 no-bottom">RE10K Dataset Comparisons</h2>
+    <div class="video-container" align="center"  style="margin-bottom: 30px; margin-top: 30px;">
+      <a onclick="togglePlay()">
+        <video class="video" id="viz_input_re10k" loop muted src="static/video/RE10K/RE10K scene 1.mp4" onloadeddata="initVideo()"></video>
+      </a>
+    </div>
+
+    <div class="video-select" align="center">
+      <a class="video-item" onclick="changeVideo_davis('static/video/RE10K/RE10K scene 1.mp4', 'static/video/RE10K/Scene1.mp4', 'Scene1')">
+        <button class="button-19 button-19-selected" role="button" id="btn_davis_Scene1" >Scene 1</button>
+      </a>
+
+            <a class="video-item" onclick="changeVideo_davis('static/video/RE10K/RE10K scene 2.mp4', 'static/video/RE10K/Scene2.mp4', 'Scene2')">
+        <button class="button-19 " role="button" id="btn_davis_Scene2" >Scene 2</button>
+      </a>
+            <a class="video-item" onclick="changeVideo_davis('static/video/RE10K/RE10K scene 3.mp4', 'static/video/RE10K/Scene3.mp4', 'Scene3')">
+        <button class="button-19 " role="button" id="btn_davis_Scene3" >Scene 3</button>
+      </a>
+            <a class="video-item" onclick="changeVideo_davis('static/video/RE10K/RE10K scene 4.mp4', 'static/video/RE10K/Scene4.mp4', 'Scene4')">
+        <button class="button-19 " role="button" id="btn_davis_Scene4" >Scene 4</button>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-widescreen">
+    <h2 class="title is-3 no-bottom">ACID Dataset Comparisons</h2>
+    <div class="video-container" align="center"  style="margin-bottom: 30px; margin-top: 30px;">
+      <a onclick="togglePlay_acid()">
+        <video class="video" id="viz_input_acid" loop muted src="static/video/ACID/ACID scene 1.mp4" onloadeddata="initVideo_acid()"></video>
+      </a>
+    </div>
+
+    <div class="video-select" align="center">
+      <a class="video-item" onclick="changeVideo_acid('static/video/ACID/ACID scene 1.mp4', 'static/video/ACID/Scene1.mp4', 'Scene1')">
+        <button class="button-18 button-18-selected" role="button" id="btn_acid_Scene1" >Scene 1</button>
+      </a>
+
+            <a class="video-item" onclick="changeVideo_acid('static/video/ACID/ACID scene 2.mp4', 'static/video/ACID/Scene2.mp4', 'Scene2')">
+        <button class="button-18 " role="button" id="btn_acid_Scene2" >Scene 2</button>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Feed-forward 3D Gaussian Splatting (FF-3DGS) emerges as a fast and robust solution for sparse-view 3D reconstruction and novel view synthesis (NVS).
+            However, existing FF-3DGS methods are built on incorrect screen-space dilation filters, causing severe rendering artifacts when rendering at out-of-distribution sampling rates.
+          </p>
+          <p>
+            We <em>firstly</em> propose an FF-3DGS model, called <strong>AA-Splat</strong>, <em>to enable robust anti-aliased rendering at any resolution</em>.
+            AA-Splat utilizes an <strong>Opacity-Balanced Band-Limiting (OBBL)</strong> design, which combines two components:
+            a <strong>3D Band-Limiting Post-Filter (3D-BLPF)</strong> to integrate multi-view maximal frequency bounds into the feed-forward reconstruction pipeline,
+            effectively band-limiting the resulting 3D scene representations and eliminating degenerate Gaussians;
+            an <strong>Opacity Balancing (OB)</strong> to seamlessly integrate all pixel-aligned Gaussian primitives into the rendering process,
+            compensating for the increased overlap between expanded Gaussian primitives.
+          </p>
+          <p>
+            AA-Splat demonstrates <em>drastic improvements</em> with average 5.4~7.5dB PSNR gains on NVS performance over a state-of-the-art (SOTA) baseline, DepthSplat, at all resolutions,
+            between 4&times; and 1/4&times;.
+            Code will be made available.
+          </p>
+        </div>
+        <!--<image src="./static/image/teaser.png" class="img-responsive" alt="teaser"><br>-->
+      </div>
+    </div>
+    <!--/ Abstract. -->
+
+</section>
+
+
+<section class="section">
+  <div class="container is-widescreen">
+    <h2 class="title is-3">Proposed Framework</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <image src="./static/image/architecture.jpg" class="img-responsive" alt="architecture"><br>
+        <div class="content has-text-justified">
+          <p>
+            <b>Overview of AA-Splat.</b>
+            After unprojecting per-view depth maps to obtain the 3D Gaussian centers,
+            the maximal frequency bound of each 3D Gaussian primitive is computed from context view camera poses and focal lengths,
+            which is then converted to its 3D band-limiting Gaussian post-filter.
+            The GS head predicts the residual Gaussian parameters which are then post-filtered by the 3D filters to obtain the band-limited 3D Gaussians.
+            During rendering, opacity balancing (OB) compensates for the increase in overlap between pixel-aligned Gaussian primitives for improved photometric supervision and rendering fidelity.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+    <div class="container is-max-desktop">
+        <h2 class="title is-3">Ablation Studies</h2>
+        <div class="content has-text-justified">
+          In the following comparisons, we perform feed-forward reconstruction at 256&times;448 resolution and render 8&times; higher resolution images to simulate zoom-in effects.
+        </div>
+        <!-- Subsection 1 -->
+        <h3 class="title is-4">Effectiveness of 3D Band-Limiting Post-Filter (3D-BLPF)</h3>
+        <div class="content has-text-justified">
+          <p>
+            The 3D-BLPF constrains the scales of the reconstructed 3D Gaussian primitives based on the maximal sampling frequency dictated by the context views.
+            Removing the 3D-BLPF introduces <span class="highlight-red">high-frequency artifacts</span> that manifest as <span class="highlight-red">sharp jagged edges and scale-like textures.</span>
+          </p>
+        </div>
+        <div class="comparison-container" id="comparison-1">
+            <div class="comparison-slider">
+                <div class="comparison-item comparison-before" id="before-wrapper-1">
+                    <img id="img-before-1" src="./static/image/dl3dv/wo_3d_blpf/crop5/scene01-05_8x.png">
+                    <span class="comparison-label label-before">Ours w/o 3D-BLPF</span>
+                </div>
+                <div class="comparison-item comparison-after">
+                    <img id="img-after-1" src="./static/image/dl3dv/ours/crop5/scene01-05_8x.png">
+                    <span class="comparison-label label-after">AA-Splat (Ours)</span>
+                </div>
+                <div class="slider-handle" id="handle-1">
+                    <div class="slider-handle-circle">↔</div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-controls">
+            <button class="nav-btn" onclick="prevSample1()"><i class="fas fa-chevron-left"></i></button>
+            <div class="sample-dots" id="dots-container-1"></div>
+            <button class="nav-btn" onclick="nextSample1()"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Subsection 2 -->
+        <h3 class="title is-4" style="margin-top: 2rem;">Effectiveness of Opacity Balancing (OB)</h3>
+        <div class="content has-text-justified">
+          <p>
+            The 3D-BLPF expands pixel-aligned Gaussian primitives, increasing spatial overlap and occlusion between splats.
+            Removing the OB compensation and leaving only the 3D-BLPF and 2D Mip filter results in <span class="highlight-red">unnatural grid-like artifacts in zoomed-in novel views.</span>
+          </p>
+        </div>
+        <div class="comparison-container" id="comparison-2">
+            <div class="comparison-slider">
+                <div class="comparison-item comparison-before" id="before-wrapper-2">
+                    <img id="img-before-2" src="./static/image/dl3dv/wo_ob/crop4/scene01-05_8x.png">
+                    <span class="comparison-label label-before">Ours w/o OB</span>
+                </div>
+                <div class="comparison-item comparison-after">
+                    <img id="img-after-2" src="./static/image/dl3dv/ours/crop4/scene01-05_8x.png">
+                    <span class="comparison-label label-after">AA-Splat (Ours)</span>
+                </div>
+                <div class="slider-handle" id="handle-2">
+                    <div class="slider-handle-circle">↔</div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-controls">
+            <button class="nav-btn" onclick="prevSample2()"><i class="fas fa-chevron-left"></i></button>
+            <div class="sample-dots" id="dots-container-2"></div>
+            <button class="nav-btn" onclick="nextSample2()"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+    </div>
+</section>
+
+<!--
+<section class="section" id="BibTeX">
+</section>
+-->
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            We thank the authors of <a target="_blank" rel="noopener noreferrer" href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>  that kindly open sourced the template of this website. 
+            Please visit our <a target="_blank" rel="noopener noreferrer" href="https://github.com/KAIST-VICLab">VIC-Lab</a> for more interesting research.
+          </p>
+        </div>
+      </div>
+      <a href="https://mapmyvisitors.com/web/1c1oj" title="Visit tracker"><img src="https://mapmyvisitors.com/map.png?d=gc2-AlxTT663gKH7alVmw473v-UaHg1VjiT7VOUhfhs&cl=ffffff"></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+    // --- Carousel 1 ---
+    const samples1 = [
+        { before: "./static/image/dl3dv/wo_3d_blpf/crop5/scene01-05_8x.png", after: "./static/image/dl3dv/ours/crop5/scene01-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_3d_blpf/crop5/scene02-05_8x.png", after: "./static/image/dl3dv/ours/crop5/scene02-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_3d_blpf/crop5/scene04-05_8x.png", after: "./static/image/dl3dv/ours/crop5/scene04-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_3d_blpf/crop5/scene00-05_8x.png", after: "./static/image/dl3dv/ours/crop5/scene00-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_3d_blpf/crop5/scene03-05_8x.png", after: "./static/image/dl3dv/ours/crop5/scene03-05_8x.png" },
+    ];
+
+    let currentIdx1 = 0;
+    const container1 = document.querySelector('#comparison-1');
+    const beforeWrapper1 = document.querySelector('#before-wrapper-1');
+    const imgBefore1 = document.querySelector('#img-before-1');
+    const imgAfter1 = document.querySelector('#img-after-1');
+    const handle1 = document.querySelector('#handle-1');
+    const dotsContainer1 = document.querySelector('#dots-container-1');
+
+    function moveSlider1(e) {
+        if (!container1) return;
+        const rect = container1.getBoundingClientRect();
+        const x = (e.pageX || (e.touches ? e.touches[0].pageX : 0)) - rect.left;
+        let percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        beforeWrapper1.style.width = percentage + '%';
+        handle1.style.left = percentage + '%';
+        //imgBefore1.style.width = rect.width + 'px';
+    }
+
+    container1.addEventListener('mousemove', moveSlider1);
+    container1.addEventListener('touchmove', (e) => { moveSlider1(e); e.preventDefault(); }, {passive: false});
+
+    function updateSample1(idx) {
+        currentIdx1 = idx;
+        imgBefore1.src = samples1[idx].before;
+        imgAfter1.src = samples1[idx].after;
+        updateDots1();
+    }
+
+    function nextSample1() { updateSample1((currentIdx1 + 1) % samples1.length); }
+    function prevSample1() { updateSample1((currentIdx1 - 1 + samples1.length) % samples1.length); }
+
+    samples1.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.onclick = () => updateSample1(i);
+        if (dotsContainer1) dotsContainer1.appendChild(dot);
+    });
+
+    function updateDots1() {
+        dotsContainer1.querySelectorAll('.dot').forEach((dot, i) => {
+            dot.className = 'dot' + (i === currentIdx1 ? ' active' : '');
+        });
+    }
+
+    // --- Carousel 2 ---
+    const samples2 = [
+        { before: "./static/image/dl3dv/wo_ob/crop4/scene01-05_8x.png", after: "./static/image/dl3dv/ours/crop4/scene01-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_ob/crop4/scene00-05_8x.png", after: "./static/image/dl3dv/ours/crop4/scene00-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_ob/crop4/scene03-05_8x.png", after: "./static/image/dl3dv/ours/crop4/scene03-05_8x.png" },
+        { before: "./static/image/dl3dv/wo_ob/crop4/scene02-05_8x.png", after: "./static/image/dl3dv/ours/crop4/scene02-05_8x.png" },
+        //{ before: "./static/image/dl3dv/wo_ob/crop4/scene04-05_8x.png", after: "./static/image/dl3dv/ours/crop4/scene04-05_8x.png" },
+    ];
+
+    let currentIdx2 = 0;
+    const container2 = document.querySelector('#comparison-2');
+    const beforeWrapper2 = document.querySelector('#before-wrapper-2');
+    const imgBefore2 = document.querySelector('#img-before-2');
+    const imgAfter2 = document.querySelector('#img-after-2');
+    const handle2 = document.querySelector('#handle-2');
+    const dotsContainer2 = document.querySelector('#dots-container-2');
+
+    function moveSlider2(e) {
+        if (!container2) return;
+        const rect = container2.getBoundingClientRect();
+        const x = (e.pageX || (e.touches ? e.touches[0].pageX : 0)) - rect.left;
+        let percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        beforeWrapper2.style.width = percentage + '%';
+        handle2.style.left = percentage + '%';
+        imgBefore2.style.width = rect.width + 'px';
+    }
+
+    container2.addEventListener('mousemove', moveSlider2);
+    container2.addEventListener('touchmove', (e) => { moveSlider2(e); e.preventDefault(); }, {passive: false});
+
+    function updateSample2(idx) {
+        currentIdx2 = idx;
+        imgBefore2.src = samples2[idx].before;
+        imgAfter2.src = samples2[idx].after;
+        updateDots2();
+    }
+
+    function nextSample2() { updateSample2((currentIdx2 + 1) % samples2.length); }
+    function prevSample2() { updateSample2((currentIdx2 - 1 + samples2.length) % samples2.length); }
+
+    samples2.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.onclick = () => updateSample2(i);
+        if (dotsContainer2) dotsContainer2.appendChild(dot);
+    });
+
+    function updateDots2() {
+        dotsContainer2.querySelectorAll('.dot').forEach((dot, i) => {
+            dot.className = 'dot' + (i === currentIdx2 ? ' active' : '');
+        });
+    }
+
+    // --- Shared resize/load handler ---
+    window.addEventListener('load', () => {
+        imgBefore1.style.width = container1.offsetWidth + 'px';
+        imgBefore2.style.width = container2.offsetWidth + 'px';
+    });
+    window.addEventListener('resize', () => {
+        imgBefore1.style.width = container1.offsetWidth + 'px';
+        imgBefore2.style.width = container2.offsetWidth + 'px';
+    });
+</script>
+
+</body>
+</html>
